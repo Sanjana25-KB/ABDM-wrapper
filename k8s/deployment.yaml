@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: abdm-wrapper
+  namespace: abdm
+  labels:
+    app: abdm-wrapper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: abdm-wrapper
+  template:
+    metadata:
+      labels:
+        app: abdm-wrapper
+    spec:
+      containers:
+        - name: abdm-wrapper
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_DATA_MONGODB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: abdm-wrapper-secret
+                  key: mongodbHost
+            - name: SPRING_DATA_MONGODB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: abdm-wrapper-secret
+                  key: mongodbPort
+            - name: HIP_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: abdm-wrapper-secret
+                  key: hipBaseUrl
+            - name: DATA_PUSH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: abdm-wrapper-secret
+                  key: dataPushUrl
+          resources:
+            requests:
+              cpu: 256m
+              memory: 512Mi
+            limits:
+              cpu: 512m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: abdm-wrapper
+  namespace: abdm
+  labels:
+    app: abdm-wrapper
+spec:
+  selector:
+    app: abdm-wrapper
+  ports:
+    - port: 8082
+      targetPort: 8082
+      protocol: TCP
+  type: ClusterIP
