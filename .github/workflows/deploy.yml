@@ -1,4 +1,4 @@
-name: Build and Push to Docker Hub
+name: Build, Push & Deploy to EKS
 
 on:
   push:
@@ -7,10 +7,13 @@ on:
 
 env:
   DOCKER_IMAGE: khushibaby/abdm
+  AWS_REGION: ap-south-1
+  EKS_CLUSTER: eks-lab-cluster
+  K8S_NAMESPACE: abdm
 
 jobs:
-  build-and-push:
-    name: Build & Push
+  build-and-deploy:
+    name: Build, Push & Deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -30,3 +33,34 @@ jobs:
           docker build -t $DOCKER_IMAGE:$IMAGE_TAG -t $DOCKER_IMAGE:latest .
           docker push $DOCKER_IMAGE:$IMAGE_TAG
           docker push $DOCKER_IMAGE:latest
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace $K8S_NAMESPACE || true
+
+      - name: Create K8s secret if not exists
+        run: |
+          kubectl create secret generic abdm-wrapper-secret \
+            --namespace=$K8S_NAMESPACE \
+            --from-literal=mongodbHost=65.0.54.9 \
+            --from-literal=mongodbPort=27017 \
+            --from-literal=hipBaseUrl=http://placeholder \
+            --from-literal=dataPushUrl=http://placeholder \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f k8s/deployment.yaml -n $K8S_NAMESPACE
+          kubectl rollout restart deployment/abdm-wrapper -n $K8S_NAMESPACE
+          kubectl rollout status deployment/abdm-wrapper -n $K8S_NAMESPACE --timeout=300s
