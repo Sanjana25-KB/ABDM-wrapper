@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: abdm-wrapper
-          image: IMAGE_PLACEHOLDER
+          image: 888798003375.dkr.ecr.ap-south-1.amazonaws.com/abdm-wrapper:latest
           ports:
             - containerPort: 8082
           env:
