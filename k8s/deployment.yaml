@@ -36,6 +36,14 @@ spec:
                 secretKeyRef:
                   name: abdm-wrapper-secret
                   key: dataPushUrl
+            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB
+              value: WARN
+            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_SERVLET_MVC_METHOD_ANNOTATION_HTTPENTITYMETHODPROCESSOR
+              value: WARN
+            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_SERVLET_MVC_METHOD_ANNOTATION_REQUESTRESPONSEBODYMETHODPROCESSOR
+              value: WARN
+            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_HTTPLOGGING
+              value: WARN
           resources:
             requests:
               cpu: 256m
