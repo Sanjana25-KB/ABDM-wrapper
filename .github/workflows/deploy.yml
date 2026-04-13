@@ -49,18 +49,10 @@ jobs:
         run: |
           kubectl create namespace $K8S_NAMESPACE || true
 
-      - name: Create K8s secret if not exists
-        run: |
-          kubectl create secret generic abdm-wrapper-secret \
-            --namespace=$K8S_NAMESPACE \
-            --from-literal=mongodbHost=65.0.54.9 \
-            --from-literal=mongodbPort=27017 \
-            --from-literal=hipBaseUrl=http://placeholder \
-            --from-literal=dataPushUrl=http://placeholder \
-            --dry-run=client -o yaml | kubectl apply -f -
-
       - name: Deploy to EKS
         run: |
+          kubectl apply -f k8s/secret.yaml
+          kubectl apply -f k8s/ingress.yaml
           kubectl apply -f k8s/deployment.yaml -n $K8S_NAMESPACE
           kubectl rollout restart deployment/abdm-wrapper -n $K8S_NAMESPACE
           kubectl rollout status deployment/abdm-wrapper -n $K8S_NAMESPACE --timeout=300s

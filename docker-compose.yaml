@@ -11,8 +11,7 @@ services:
     depends_on:
       - mongodb
     environment:
-      SPRING_DATA_MONGODB_HOST: host.docker.internal
-      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_DATA_MONGODB_URI: ${SPRING_DATA_MONGODB_URI:-mongodb://host.docker.internal:27017/abdm}
     networks:
       - docker_network
     extra_hosts:
