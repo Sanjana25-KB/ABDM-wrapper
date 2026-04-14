@@ -45,14 +45,9 @@ jobs:
         run: |
           aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
 
-      - name: Create namespace if not exists
+      - name: Update image in EKS
+        env:
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          kubectl create namespace $K8S_NAMESPACE || true
-
-      - name: Deploy to EKS
-        run: |
-          kubectl apply -f k8s/secret.yaml
-          kubectl apply -f k8s/ingress.yaml
-          kubectl apply -f k8s/deployment.yaml -n $K8S_NAMESPACE
-          kubectl rollout restart deployment/abdm-wrapper -n $K8S_NAMESPACE
+          kubectl set image deployment/abdm-wrapper abdm-wrapper=$DOCKER_IMAGE:$IMAGE_TAG -n $K8S_NAMESPACE
           kubectl rollout status deployment/abdm-wrapper -n $K8S_NAMESPACE --timeout=300s
