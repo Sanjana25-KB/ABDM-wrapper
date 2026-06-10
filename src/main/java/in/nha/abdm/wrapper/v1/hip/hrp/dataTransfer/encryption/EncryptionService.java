@@ -46,9 +46,9 @@ public class EncryptionService {
    * @param bundleResponse is the response from HIP which has FHIR bundle.
    */
   public EncryptionResponse encrypt(
-      HIPHealthInformationRequest hipHealthInformationRequest,
-      HealthInformationBundleResponse bundleResponse)
-      throws InvalidAlgorithmParameterException,
+          HIPHealthInformationRequest hipHealthInformationRequest,
+          HealthInformationBundleResponse bundleResponse)
+          throws InvalidAlgorithmParameterException,
           NoSuchAlgorithmException,
           NoSuchProviderException,
           InvalidKeySpecException,
@@ -59,35 +59,35 @@ public class EncryptionService {
     }
     in.nha.abdm.wrapper.v1.common.cipher.Key senderKeys = cipherKeyManager.fetchKeys();
     in.nha.abdm.wrapper.v1.common.cipher.Key receiverKeys =
-        Key.builder()
-            .publicKey(
-                hipHealthInformationRequest
-                    .getHiRequest()
-                    .getKeyMaterial()
-                    .getDhPublicKey()
-                    .getKeyValue())
-            .nonce(hipHealthInformationRequest.getHiRequest().getKeyMaterial().getNonce())
-            .build();
+            Key.builder()
+                    .publicKey(
+                            hipHealthInformationRequest
+                                    .getHiRequest()
+                                    .getKeyMaterial()
+                                    .getDhPublicKey()
+                                    .getKeyValue())
+                    .nonce(hipHealthInformationRequest.getHiRequest().getKeyMaterial().getNonce())
+                    .build();
     byte[] xorOfRandom = xorOfRandom(senderKeys.getNonce(), receiverKeys.getNonce());
     List<HealthInformationBundle> encryptedCareContextsList = new ArrayList<>();
     for (HealthInformationBundle healthInformationBundle :
-        bundleResponse.getHealthInformationBundle()) {
+            bundleResponse.getHealthInformationBundle()) {
       try {
         String encryptedData =
-            encrypt(
-                xorOfRandom,
-                senderKeys.getPrivateKey(),
-                receiverKeys.getPublicKey(),
-                healthInformationBundle.getBundleContent());
+                encrypt(
+                        xorOfRandom,
+                        senderKeys.getPrivateKey(),
+                        receiverKeys.getPublicKey(),
+                        healthInformationBundle.getBundleContent());
         encryptedCareContextsList.add(
-            HealthInformationBundle.builder()
-                .careContextReference(healthInformationBundle.getCareContextReference())
-                .bundleContent(encryptedData)
-                .build());
+                HealthInformationBundle.builder()
+                        .careContextReference(healthInformationBundle.getCareContextReference())
+                        .bundleContent(encryptedData)
+                        .build());
       } catch (Exception e) {
         log.error(
-            "Error encrypting data for care context: "
-                + healthInformationBundle.getCareContextReference());
+                "Error encrypting data for care context: "
+                        + healthInformationBundle.getCareContextReference());
       }
     }
     String keyToShare = getBase64String(getEncodedHIPPublicKey(getKey(senderKeys.getPublicKey())));
@@ -110,15 +110,15 @@ public class EncryptionService {
   }
 
   private String encrypt(
-      byte[] xorOfRandom, String senderPrivateKey, String receiverPublicKey, String stringToEncrypt)
-      throws NoSuchAlgorithmException,
+          byte[] xorOfRandom, String senderPrivateKey, String receiverPublicKey, String stringToEncrypt)
+          throws NoSuchAlgorithmException,
           InvalidKeySpecException,
           NoSuchProviderException,
           InvalidKeyException {
     // Generating shared secret
     String sharedKey =
-        doECDH(
-            getBytesForBase64String(senderPrivateKey), getBytesForBase64String(receiverPublicKey));
+            doECDH(
+                    getBytesForBase64String(senderPrivateKey), getBytesForBase64String(receiverPublicKey));
 
     // Generating iv and HKDF-AES key
     byte[] iv = Arrays.copyOfRange(xorOfRandom, xorOfRandom.length - 12, xorOfRandom.length);
@@ -147,12 +147,12 @@ public class EncryptionService {
   }
 
   private String doECDH(byte[] dataPrv, byte[] dataPub)
-      throws NoSuchAlgorithmException,
+          throws NoSuchAlgorithmException,
           NoSuchProviderException,
           InvalidKeySpecException,
           InvalidKeyException {
     KeyAgreement ka =
-        KeyAgreement.getInstance(CipherKeyManager.ALGORITHM, CipherKeyManager.PROVIDER);
+            KeyAgreement.getInstance(CipherKeyManager.ALGORITHM, CipherKeyManager.PROVIDER);
     ka.init(loadPrivateKey(dataPrv));
     ka.doPhase(loadPublicKey(dataPub), true);
     byte[] secret = ka.generateSecret();
@@ -160,33 +160,33 @@ public class EncryptionService {
   }
 
   private PrivateKey loadPrivateKey(byte[] data)
-      throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
+          throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
     X9ECParameters ecP = CustomNamedCurves.getByName(CipherKeyManager.CURVE);
     ECParameterSpec params =
-        new ECParameterSpec(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+            new ECParameterSpec(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
     ECPrivateKeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(data), params);
     KeyFactory kf = KeyFactory.getInstance(CipherKeyManager.ALGORITHM, CipherKeyManager.PROVIDER);
     return kf.generatePrivate(privateKeySpec);
   }
 
   private PublicKey loadPublicKey(byte[] data)
-      throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
+          throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
     Security.addProvider(new BouncyCastleProvider());
     X9ECParameters ecP = CustomNamedCurves.getByName(CipherKeyManager.CURVE);
     ECParameterSpec ecNamedCurveParameterSpec =
-        new ECParameterSpec(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+            new ECParameterSpec(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
 
     return KeyFactory.getInstance(CipherKeyManager.ALGORITHM, CipherKeyManager.PROVIDER)
-        .generatePublic(
-            new ECPublicKeySpec(
-                ecNamedCurveParameterSpec.getCurve().decodePoint(data), ecNamedCurveParameterSpec));
+            .generatePublic(
+                    new ECPublicKeySpec(
+                            ecNamedCurveParameterSpec.getCurve().decodePoint(data), ecNamedCurveParameterSpec));
   }
 
   private byte[] generateAesKey(byte[] xorOfRandoms, String sharedKey) {
     byte[] salt = Arrays.copyOfRange(xorOfRandoms, 0, 20);
     HKDFBytesGenerator hkdfBytesGenerator = new HKDFBytesGenerator(new SHA256Digest());
     HKDFParameters hkdfParameters =
-        new HKDFParameters(getBytesForBase64String(sharedKey), salt, null);
+            new HKDFParameters(getBytesForBase64String(sharedKey), salt, null);
     hkdfBytesGenerator.init(hkdfParameters);
     byte[] aesKey = new byte[32];
     hkdfBytesGenerator.generateBytes(aesKey, 0, 32);
@@ -199,11 +199,11 @@ public class EncryptionService {
 
   private byte[] getEncodedHIPPublicKey(PublicKey key) {
     ECPublicKey ecKey = (ECPublicKey) key;
-    return ecKey.getEncoded();
+    return ecKey.getQ().getEncoded(false);
   }
 
   private PublicKey getKey(String key)
-      throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
+          throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
     byte[] bytesForBase64String = getBytesForBase64String(key);
     return loadPublicKey(bytesForBase64String);
   }
