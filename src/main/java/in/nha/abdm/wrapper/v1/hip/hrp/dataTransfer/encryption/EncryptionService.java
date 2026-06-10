@@ -164,7 +164,7 @@ public class EncryptionService {
     X9ECParameters ecP = CustomNamedCurves.getByName(CipherKeyManager.CURVE);
     ECParameterSpec params =
             new ECParameterSpec(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
-    ECPrivateKeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(data), params);
+    ECPrivateKeySpec privateKeySpec = new ECPrivateKeySpec(new BigInteger(1, data), params);
     KeyFactory kf = KeyFactory.getInstance(CipherKeyManager.ALGORITHM, CipherKeyManager.PROVIDER);
     return kf.generatePrivate(privateKeySpec);
   }
@@ -199,7 +199,7 @@ public class EncryptionService {
 
   private byte[] getEncodedHIPPublicKey(PublicKey key) {
     ECPublicKey ecKey = (ECPublicKey) key;
-    return ecKey.getQ().getEncoded(false);
+    return ecKey.getEncoded();
   }
 
   private PublicKey getKey(String key)
