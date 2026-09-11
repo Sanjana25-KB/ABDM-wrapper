@@ -203,7 +203,29 @@ public class PatientV3Service {
             .getConsentDetail()
             .getConsentId()
             .equals(consent.getConsentDetail().getConsentId())) {
-          log.warn("Consent {} already exists for patient {}.", consent, abhaAddress);
+          boolean existingMissingHiu = Objects.isNull(storedConsent.getConsentDetail().getHiu());
+          boolean newHasHiu = Objects.nonNull(consent.getConsentDetail().getHiu());
+          if (existingMissingHiu && newHasHiu) {
+            log.info(
+                "Consent {} already exists for patient {} but is missing hiu - updating with more complete data.",
+                consent.getConsentDetail().getConsentId(),
+                abhaAddress);
+            Query updateConsentQuery =
+                new Query(
+                    Criteria.where(FieldIdentifiers.ABHA_ADDRESS)
+                        .is(abhaAddress)
+                        .and(FieldIdentifiers.HIP_ID)
+                        .is(hipId)
+                        .and(
+                            FieldIdentifiers.CONSENTS
+                                + ".consentDetail."
+                                + FieldIdentifiers.CONSENT_ID)
+                        .is(consent.getConsentDetail().getConsentId()));
+            Update updateConsent = new Update().set(FieldIdentifiers.CONSENTS + ".$", consent);
+            mongoTemplate.updateFirst(updateConsentQuery, updateConsent, Patient.class);
+          } else {
+            log.warn("Consent {} already exists for patient {}.", consent, abhaAddress);
+          }
           return;
         }
       }

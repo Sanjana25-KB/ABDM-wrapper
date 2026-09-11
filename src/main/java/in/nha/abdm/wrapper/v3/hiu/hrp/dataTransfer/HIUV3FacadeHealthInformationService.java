@@ -195,7 +195,9 @@ public class HIUV3FacadeHealthInformationService implements HIUV3FacadeHealthInf
               hiuGatewayHealthInformationRequest,
               Utils.getCustomHeaders(
                   GatewayConstants.X_HIU_ID,
-                  consentDetails.getConsentDetail().getHiu().getId(),
+                  consentDetails.getConsentDetail().getHiu() != null
+                      ? consentDetails.getConsentDetail().getHiu().getId()
+                      : hiuClientHealthInformationRequest.getRequesterId(),
                   hiuClientHealthInformationRequest.getRequestId()));
       if (response.getStatusCode().is2xxSuccessful()) {
         requestLogService.saveHIUHealthInformationRequest(
