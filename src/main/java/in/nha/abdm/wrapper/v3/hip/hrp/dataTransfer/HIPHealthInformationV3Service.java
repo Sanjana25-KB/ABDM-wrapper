@@ -213,7 +213,7 @@ public class HIPHealthInformationV3Service implements HIPHealthInformationV3Inte
               + ex.getMessage()
               + " unwrapped exception: "
               + Exceptions.unwrap(ex);
-      log.debug(error);
+      log.error(error);
     }
   }
 
@@ -296,7 +296,7 @@ public class HIPHealthInformationV3Service implements HIPHealthInformationV3Inte
               + ex.getMessage()
               + " unwrapped exception: "
               + Exceptions.unwrap(ex);
-      log.debug(error);
+      log.error(error);
     }
     return Collections.singletonList(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
   }
@@ -465,7 +465,7 @@ public class HIPHealthInformationV3Service implements HIPHealthInformationV3Inte
               + ex.getMessage()
               + " unwrapped exception: "
               + Exceptions.unwrap(ex);
-      log.debug(error);
+      log.error(error);
     }
   }
 }
