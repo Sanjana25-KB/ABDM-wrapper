@@ -10,6 +10,7 @@ import in.nha.abdm.wrapper.v1.common.responses.ErrorV3Response;
 import in.nha.abdm.wrapper.v1.hip.HIPPatient;
 import in.nha.abdm.wrapper.v1.hip.hrp.database.mongo.repositories.LogsRepo;
 import in.nha.abdm.wrapper.v1.hip.hrp.database.mongo.repositories.PatientRepo;
+import in.nha.abdm.wrapper.v1.hip.hrp.database.mongo.tables.ConsentPatient;
 import in.nha.abdm.wrapper.v1.hip.hrp.database.mongo.tables.Patient;
 import in.nha.abdm.wrapper.v1.hip.hrp.database.mongo.tables.RequestLog;
 import in.nha.abdm.wrapper.v1.hip.hrp.database.mongo.tables.helpers.FieldIdentifiers;
@@ -475,11 +476,10 @@ public class HIUConsentV3Service implements HIUConsentV3Interface {
           .build();
     }
     if (Objects.nonNull(notification)) {
-      String abhaAddress =
-          consentPatientService
-              .findMappingByConsentId(
-                  notification.getConsentArtefacts().get(0).getId(), "HIU", requestLog.getHipId())
-              .getAbhaAddress();
+      ConsentPatient consentPatient =
+          consentPatientService.findMappingByConsentId(
+              notification.getConsentArtefacts().get(0).getId(), "HIU", requestLog.getHipId());
+      String abhaAddress = Objects.nonNull(consentPatient) ? consentPatient.getAbhaAddress() : null;
       if (abhaAddress != null) {
         return ConsentStatusV3Response.builder()
             .status(requestLog.getStatus())
