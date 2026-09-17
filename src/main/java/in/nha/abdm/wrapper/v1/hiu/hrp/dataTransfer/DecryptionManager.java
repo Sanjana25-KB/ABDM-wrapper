@@ -7,7 +7,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import javax.crypto.KeyAgreement;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +24,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
+import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -130,11 +130,14 @@ public class DecryptionManager {
 
   private PublicKey loadPublicKeyForProjectEKAHIU(byte[] data)
       throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
-    KeyFactory ecKeyFac =
-        KeyFactory.getInstance(CipherKeyManager.ALGORITHM, CipherKeyManager.PROVIDER);
-    X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(data);
-    PublicKey publicKey = ecKeyFac.generatePublic(x509EncodedKeySpec);
-    return publicKey;
+    X9ECParameters ecP = CustomNamedCurves.getByName(CipherKeyManager.CURVE);
+    ECParameterSpec ecNamedCurveParameterSpec =
+        new ECParameterSpec(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+
+    return KeyFactory.getInstance(CipherKeyManager.ALGORITHM, CipherKeyManager.PROVIDER)
+        .generatePublic(
+            new ECPublicKeySpec(
+                ecNamedCurveParameterSpec.getCurve().decodePoint(data), ecNamedCurveParameterSpec));
   }
 
   private byte[] generateAesKey(byte[] xorOfRandoms, String sharedKey) {
