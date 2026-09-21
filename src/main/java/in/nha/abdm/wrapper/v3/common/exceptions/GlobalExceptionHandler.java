@@ -228,6 +228,8 @@ public class GlobalExceptionHandler {
   public ResponseEntity<FacadeV3Response> handleIllegalArgumentException(
       IllegalDataStateException ex) {
 
+    log.error("IllegalDataStateException: {}", ex.getMessage());
+
     ErrorV3Response errorResponse =
         ErrorV3Response.builder()
             .error(ErrorResponse.builder().code("Wrapper-1001").message(ex.getMessage()).build())

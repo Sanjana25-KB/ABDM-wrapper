@@ -248,7 +248,11 @@ public class HIUV3FacadeHealthInformationService implements HIUV3FacadeHealthInf
               + ex.getMessage()
               + " unwrapped exception: "
               + Exceptions.unwrap(ex);
-      log.debug(error);
+      log.error(
+          "healthInformation failed requestId={} consentId={}: {}",
+          hiuClientHealthInformationRequest.getRequestId(),
+          hiuClientHealthInformationRequest.getConsentId(),
+          error);
       return FacadeV3Response.builder()
           .errors(
               Collections.singletonList(
