@@ -70,7 +70,8 @@ public class HIUConsentGatewayCallbackV3Service implements HIUConsentGatewayCall
       ConsentOnInitV3Request consentOnInitV3Request, HttpHeaders httpHeaders)
       throws IllegalDataStateException {
     if (Objects.nonNull(consentOnInitV3Request)
-        && Objects.nonNull(consentOnInitV3Request.getConsentRequest())) {
+        && Objects.nonNull(consentOnInitV3Request.getConsentRequest())
+        && Objects.nonNull(consentOnInitV3Request.getResponse())) {
       // This mapping needs to be persisted in database because when gateway issues hiu notify call,
       // it passes
       // consent request id and then there is no way to track original request other that looping
@@ -83,6 +84,19 @@ public class HIUConsentGatewayCallbackV3Service implements HIUConsentGatewayCall
           consentOnInitV3Request.getResponse().getRequestId(),
           FieldIdentifiers.CONSENT_ON_INIT_RESPONSE,
           RequestStatus.CONSENT_ON_INIT_RESPONSE_RECEIVED,
+          consentOnInitV3Request.getConsentRequest().getId());
+      log.info(
+          "onInitConsent saved consentRequestId={} -> gatewayRequestId={} mapping",
+          consentOnInitV3Request.getConsentRequest().getId(),
+          consentOnInitV3Request.getResponse().getRequestId());
+    } else if (Objects.nonNull(consentOnInitV3Request)
+        && Objects.nonNull(consentOnInitV3Request.getConsentRequest())) {
+      // consentRequest present but response missing: the consentRequestId -> gatewayRequestId
+      // mapping cannot be saved here, which will later make hiuNotify's lookup fail with
+      // "No request found for consent request id". Logging so that failure is traceable back
+      // to this cause instead of appearing unexplained downstream.
+      log.error(
+          "onInitConsent received consentRequest.id={} with no response — mapping not saved",
           consentOnInitV3Request.getConsentRequest().getId());
     } else if (Objects.nonNull(consentOnInitV3Request)
         && Objects.nonNull(consentOnInitV3Request.getError())) {

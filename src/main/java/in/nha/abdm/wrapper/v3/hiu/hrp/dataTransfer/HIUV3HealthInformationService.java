@@ -98,7 +98,7 @@ public class HIUV3HealthInformationService implements HealthInformationV3Interfa
           .errorResponse(ErrorResponse.builder().message("Invalid key material").build())
           .build();
     }
-    RequestLog requestLog = requestLogV3Service.findRequestLogByTransactionId(transactionId);
+    RequestLog requestLog = findRequestLogByTransactionIdWithRetry(transactionId);
     if (Objects.isNull(requestLog)) {
       return GenericResponse.builder()
           .httpStatus(HttpStatus.BAD_REQUEST)
@@ -112,6 +112,30 @@ public class HIUV3HealthInformationService implements HealthInformationV3Interfa
     notifyGateway(healthInformationPushRequest, genericResponse, requestLog.getHipId());
 
     return genericResponse;
+  }
+
+  /**
+   * The Gateway's on-request callback links this transactionId onto the RequestLog asynchronously,
+   * and the HIP can push encrypted data before that link completes. Retry briefly instead of failing on the first miss.
+   */
+  private RequestLog findRequestLogByTransactionIdWithRetry(String transactionId) {
+    final int maxAttempts = 5;
+    final long retryDelayMillis = 300;
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      RequestLog requestLog = requestLogV3Service.findRequestLogByTransactionId(transactionId);
+      if (Objects.nonNull(requestLog)) {
+        return requestLog;
+      }
+      if (attempt < maxAttempts) {
+        try {
+          Thread.sleep(retryDelayMillis);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          break;
+        }
+      }
+    }
+    return null;
   }
 
   /**
